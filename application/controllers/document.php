@@ -2,7 +2,7 @@
 
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Project extends CI_Controller {
+class Document extends CI_Controller {
 
     function __construct() {
         parent::__construct();
@@ -10,7 +10,7 @@ class Project extends CI_Controller {
         $this->load->model('login_m');
         $this->load->model('message_m');
         $this->load->model('notification_m');
-        $this->load->model('project_m');
+        $this->load->model('document_m');
         $this->load->model('file_m');
         $this->load->model('watchlist_m');
         $this->load->model('user_m');
@@ -38,7 +38,7 @@ class Project extends CI_Controller {
                     ), array(0, 10), array(
                 'notification.NTFCRDT' => 'desc'
             )),
-            'active' => 'project'
+            'active' => 'document'
         );
 
         return $data;
@@ -46,8 +46,8 @@ class Project extends CI_Controller {
 
     public function index() {
         $data = $this->get_basic_data();
-        $data['view'] = 'project/proj_main_v';
-        $data['user_prj'] = $this->project_m->get_project(
+        $data['view'] = 'document/doc_main_v';
+        $data['user_prj'] = $this->document_m->get_project(
                 array(
             'pjcteam.USRID' => $this->session->userdata('USRID')
                 ), array(
@@ -56,13 +56,21 @@ class Project extends CI_Controller {
                 ), null, array(
             'project.PJLMOD' => 'desc'
         ));
+        $data['prj_doc'] = $this->document_m->get_document(
+                array(
+            'project.USRID' => $this->session->userdata('USRID')
+                ), array(                   
+            'project' => 'project.PJCID=file.PJCID'
+                ), null, array(
+            'file.FILMOD' => 'desc'
+        ));
         $this->load->view('main_v', $data);
     }
 
-    public function view_project($id) {
+    public function view_document($id) {
         $data = $this->get_basic_data();
-        $data['view'] = 'project/proj_view_v';
-        $data['user_prj'] = $this->project_m->get_project(
+        $data['view'] = 'document/doc_view_v';
+        $data['user_prj'] = $this->document_m->get_project(
                 array(
             'project.PJCID' => $id,
             'pjcteam.USRID' => $this->session->userdata('USRID')
@@ -72,48 +80,16 @@ class Project extends CI_Controller {
                 ), null, array(
             'project.PJLMOD' => 'desc'
         ));
-
-        if ($data['user_prj']->num_rows() <= 0)
-            echo 'Error';
-        else {
-            $data['user_prj'] = $data['user_prj']->result_array()[0];
-            $data['user_prj2'] = $this->project_m->get_project(
-                    array(
-                'project.PJCID' => $id
-                    ), array(
-                'pjcteam' => 'pjcteam.PJCID=project.PJCID',
-                'user' => 'user.USRID=pjcteam.USRID'
-                    ), null, array(
-                'project.PJLMOD' => 'desc'
-            ));
-            $data['user_doc'] = $this->file_m->get_file(
-                    array(
-                'project.PJCID' => $id,
-                'substr(file.FILTYP,1,1)' => 'D'
-                    ), array(
-                'project' => 'project.PJCID=file.PJCID'
-                    ), null, array(
-                'file.FILMOD' => 'desc'
-            ));
-            $data['user_tbl'] = $this->file_m->get_file(
-                    array(
-                'project.PJCID' => $id,
-                'file.FILTYP' => 'TBL'
-                    ), array(
-                'project' => 'project.PJCID=file.PJCID'
-                    ), null, array(
-                'file.FILMOD' => 'desc'
-            ));
-            $data['user_wch'] = $this->watchlist_m->get_watchlist(
-                    array(
-                'project.PJCID' => $id,
-                    ), array(
-                'project' => 'project.PJCID=watchlist.PJCID'
-                    ), null, array(
-                'watchlist.WCLMOD' => 'desc'
-            ));
-            $this->load->view('main_v', $data);
-        }
+        $data['prj_doc'] = $this->document_m->get_document(
+                array(
+            'project.PJCID' => $id,
+            'pjcteam.USRID' => $this->session->userdata('USRID')
+                ), array(                   
+            'project' => 'project.PJCID=file.PJCID'
+                ), null, array(
+            'file.FILMOD' => 'desc'
+        ));
+        $this->load->view('main_v', $data);
     }
 
     public function add_project() {
@@ -135,7 +111,7 @@ class Project extends CI_Controller {
                 'PJCRDT' => date('Y-m-d H:i:s')
             );
 
-            $insert_id = $this->project_m->add_project($proj_data);
+            $insert_id = $this->document_m->add_project($proj_data);
 
             for ($i = 1; $i < $this->input->post('max_member'); $i++) {
                 $team_data = array(
@@ -145,7 +121,7 @@ class Project extends CI_Controller {
                     'PJTCRDT' => date('Y-m-d H:i:s')
                 );
 
-                $this->project_m->add_team_member($team_data);
+                $this->document_m->add_team_member($team_data);
             }
 
             redirect('project');
